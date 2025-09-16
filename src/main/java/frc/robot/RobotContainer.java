@@ -15,6 +15,8 @@ import edu.wpi.first.wpilibj2.command.button.POVButton;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.arm.Arm;
+import frc.robot.subsystems.arm.ArmIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -37,13 +39,16 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Elevator elevator;
+  private final Arm arm;
 
   // Controller
   private final Joystick joystick = new Joystick(0);
   private final JoystickButton buttonA = new JoystickButton(joystick, 1); // Trigger
   private final JoystickButton buttonB = new JoystickButton(joystick, 2);
   private final JoystickButton buttonX = new JoystickButton(joystick, 3);
+  private final JoystickButton buttonY = new JoystickButton(joystick, 4);
   private final POVButton povUp = new POVButton(joystick, 0);
+  private final POVButton povDown = new POVButton(joystick, 180);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -51,6 +56,7 @@ public class RobotContainer {
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     this.elevator = new Elevator(Robot.isReal() ? new ElevatorIOKraken() : new ElevatorIOSim());
+    this.arm = new Arm(new ArmIOSim());
 
     switch (Constants.currentMode) {
       case REAL:
@@ -120,8 +126,8 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -joystick.getY(), // Forward/backward movement
-            () -> -joystick.getX(), // Lateral movement
+            () -> joystick.getY(), // Forward/backward movement
+            () -> joystick.getX(), // Lateral movement
             () -> -joystick.getZ()) // Rotation (Z axis on the joystick)
         );
 
@@ -141,9 +147,9 @@ public class RobotContainer {
             .ignoringDisable(true));
 
     // Control elevator with POV
-    povUp
-        .whileTrue(elevator.setSetpoint(Centimeters.of(75)))
-        .onFalse(elevator.setSetpoint(Inches.of(0)));
+    povUp.onTrue(elevator.setSetpoint(Centimeters.of(75)));
+    povDown.onTrue(elevator.setSetpoint(Centimeters.of(0)));
+    buttonY.onTrue(arm.setSetpoint(Radians.of(90)));
   }
 
   /**
